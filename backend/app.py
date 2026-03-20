@@ -11,7 +11,43 @@ from services.db import get_db_connection
 
 app = Flask(__name__)
 CORS(app)
+@app.route('/init-db')
+def init_db():
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100),
+        password VARCHAR(100),
+        location VARCHAR(150),
+        worker_type VARCHAR(100)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS policies (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        weekly_premium FLOAT,
+        risk_score FLOAT,
+        status VARCHAR(50)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS claims (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        payout_amount FLOAT,
+        status VARCHAR(50)
+    )
+    """)
+
+    conn.commit()
+
+    return "DB Initialized ✅"
 # ---------------- REGISTER ----------------
 @app.route('/register', methods=['POST'])
 def register():
