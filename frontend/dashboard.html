@@ -1,123 +1,129 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <title>Dashboard - SurakshaAI</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    
+
 <div class="container">
-    <h1>🚀 SurakshaAI Dashboard</h1>
+    <h1>🚀 SurakshaAI</h1>
+    <h2>Dashboard</h2>
 
     <h3 id="welcome"></h3>
 
-    <div class="form">
-        <h3>Create Policy</h3>
+    <h3>Create Policy</h3>
 
-        <label>Weather:</label>
-        <select id="weather">
-            <option value="clear">Clear</option>
-            <option value="rain">Rain</option>
-            <option value="storm">Storm</option>
-        </select>
+    <select id="weather">
+        <option value="clear">Clear</option>
+        <option value="rain">Rain</option>
+        <option value="storm">Storm</option>
+    </select>
 
-        <label>AQI:</label>
-        <input type="number" id="aqi" placeholder="Enter AQI">
+    <input type="number" id="aqi" placeholder="Enter AQI">
 
-        <label>Traffic:</label>
-        <select id="traffic">
-            <option value="low">Low</option>
-            <option value="high">High</option>
-        </select>
+    <select id="traffic">
+        <option value="low">Low</option>
+        <option value="high">High</option>
+    </select>
 
-        <button onclick="createPolicy()">Create Policy</button>
-    </div>
+    <button onclick="createPolicy()">Create Policy</button>
 
-    <div class="result">
-        <h3 id="status"></h3>
-        <h3>Risk Score: <span id="risk">-</span></h3>
-        <h3>Weekly Premium: ₹<span id="premium">-</span></h3>
-        <h3 id="claim"></h3>
-    </div>
+    <!-- 🔥 DEMO BUTTON -->
+    <button onclick="demoHighRisk()">🔥 Simulate Disaster</button>
+
+    <h3 id="status"></h3>
+    <h3>Risk: <span id="risk">-</span></h3>
+    <h3>Premium: ₹<span id="premium">-</span></h3>
+    <h3 id="claim"></h3>
+
+    <button onclick="logout()">Logout</button>
 </div>
 
 <script>
-let currentUserId = localStorage.getItem("user_id");
+let user_id = localStorage.getItem("user_id");
 
 // 🔒 Redirect if not logged in
-if (!currentUserId) {
+if (!user_id) {
     window.location.href = "login.html";
 }
 
-// 👋 Welcome message
-document.getElementById("welcome").innerText =
-    "Welcome User ID: " + currentUserId;
+// 👋 Welcome
+document.getElementById("welcome").innerText = "User ID: " + user_id;
 
 
+// 🚀 CREATE POLICY
 async function createPolicy() {
 
     const weather = document.getElementById("weather").value;
-    const aqi = document.getElementById("aqi").value;
+    const aqi = parseInt(document.getElementById("aqi").value);
     const traffic = document.getElementById("traffic").value;
 
     if (!aqi) {
-        document.getElementById("status").innerText = "Please enter AQI value";
+        document.getElementById("status").innerText = "⚠️ Please enter AQI";
         return;
     }
 
-    const response = await fetch("http://127.0.0.1:5000/create-policy", {
+    // 🔄 Loading effect
+    document.getElementById("status").innerText = "⏳ Processing...";
+
+    const res = await fetch("http://127.0.0.1:5000/create-policy", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            user_id: parseInt(currentUserId),
-            weather,
-            aqi: parseInt(aqi),
-            traffic
-        })
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({user_id, weather, aqi, traffic})
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    // 🧾 Basic results
-    document.getElementById("status").innerText = data.message;
+    // 🧾 Premium
     document.getElementById("premium").innerText = data.weekly_premium;
 
-    // 🔥 Risk display
-    if (data.risk_score !== undefined) {
+    // 🔥 Risk Display
+    let riskText = data.risk_score;
 
-        let riskText = "";
-
-        if (data.risk_score < 0.3) {
-            riskText = "Low Risk 🟢";
-        } else if (data.risk_score < 0.7) {
-            riskText = "Medium Risk 🟡";
-        } else {
-            riskText = "High Risk 🔴";
-        }
-
-        document.getElementById("risk").innerText =
-            data.risk_score + " (" + riskText + ")";
+    if (data.risk_score < 0.3) {
+        riskText += " (Low 🟢)";
+    } else if (data.risk_score < 0.7) {
+        riskText += " (Medium 🟡)";
+    } else {
+        riskText += " (High 🔴)";
     }
 
-    // 🔥 CLAIM + FRAUD DISPLAY (FIXED)
-    if (data.claim && data.claim.claim_triggered) {
+    document.getElementById("risk").innerText = riskText;
+
+    // 🔥 CLAIM + FRAUD DISPLAY
+    if (data.claim.claim_triggered) {
 
         if (data.claim.fraud) {
             document.getElementById("claim").innerText =
                 "⚠️ Fraud Detected! Claim Flagged";
         } else {
             document.getElementById("claim").innerText =
-                "🚨 Claim Triggered! Payout ₹" + data.claim.payout;
+                "🚨 Claim Triggered! You received ₹" + data.claim.payout;
         }
 
     } else {
         document.getElementById("claim").innerText =
             "✅ No claim triggered (low risk)";
     }
+
+    document.getElementById("status").innerText = "✅ Policy Created Successfully";
+}
+
+
+// 🔥 DEMO BUTTON (KILLER FEATURE)
+function demoHighRisk() {
+    document.getElementById("weather").value = "storm";
+    document.getElementById("aqi").value = 400;
+    document.getElementById("traffic").value = "high";
+}
+
+
+// 🔒 LOGOUT
+function logout() {
+    localStorage.removeItem("user_id");
+    window.location.href = "login.html";
 }
 </script>
 
