@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - SurakshaAI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    
+<div class="container">
+    <h1>🚀 SurakshaAI Dashboard</h1>
+
+    <h3 id="welcome"></h3>
+
+    <div class="form">
+        <h3>Create Policy</h3>
+
+        <label>Weather:</label>
+        <select id="weather">
+            <option value="clear">Clear</option>
+            <option value="rain">Rain</option>
+            <option value="storm">Storm</option>
+        </select>
+
+        <label>AQI:</label>
+        <input type="number" id="aqi" placeholder="Enter AQI">
+
+        <label>Traffic:</label>
+        <select id="traffic">
+            <option value="low">Low</option>
+            <option value="high">High</option>
+        </select>
+
+        <button onclick="createPolicy()">Create Policy</button>
+    </div>
+
+    <div class="result">
+        <h3 id="status"></h3>
+        <h3>Risk Score: <span id="risk">-</span></h3>
+        <h3>Weekly Premium: ₹<span id="premium">-</span></h3>
+        <h3 id="claim"></h3>
+    </div>
+</div>
+
+<script>
+let currentUserId = localStorage.getItem("user_id");
+
+// 🔒 Redirect if not logged in
+if (!currentUserId) {
+    window.location.href = "login.html";
+}
+
+// 👋 Welcome message
+document.getElementById("welcome").innerText =
+    "Welcome User ID: " + currentUserId;
+
+
+async function createPolicy() {
+
+    const weather = document.getElementById("weather").value;
+    const aqi = document.getElementById("aqi").value;
+    const traffic = document.getElementById("traffic").value;
+
+    if (!aqi) {
+        document.getElementById("status").innerText = "Please enter AQI value";
+        return;
+    }
+
+    const response = await fetch("http://127.0.0.1:5000/create-policy", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            user_id: parseInt(currentUserId),
+            weather,
+            aqi: parseInt(aqi),
+            traffic
+        })
+    });
+
+    const data = await response.json();
+
+    // 🧾 Basic results
+    document.getElementById("status").innerText = data.message;
+    document.getElementById("premium").innerText = data.weekly_premium;
+
+    // 🔥 Risk display
+    if (data.risk_score !== undefined) {
+
+        let riskText = "";
+
+        if (data.risk_score < 0.3) {
+            riskText = "Low Risk 🟢";
+        } else if (data.risk_score < 0.7) {
+            riskText = "Medium Risk 🟡";
+        } else {
+            riskText = "High Risk 🔴";
+        }
+
+        document.getElementById("risk").innerText =
+            data.risk_score + " (" + riskText + ")";
+    }
+
+    // 🔥 CLAIM + FRAUD DISPLAY (FIXED)
+    if (data.claim && data.claim.claim_triggered) {
+
+        if (data.claim.fraud) {
+            document.getElementById("claim").innerText =
+                "⚠️ Fraud Detected! Claim Flagged";
+        } else {
+            document.getElementById("claim").innerText =
+                "🚨 Claim Triggered! Payout ₹" + data.claim.payout;
+        }
+
+    } else {
+        document.getElementById("claim").innerText =
+            "✅ No claim triggered (low risk)";
+    }
+}
+</script>
+
+</body>
+</html>

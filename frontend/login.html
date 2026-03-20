@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Login - SurakshaAI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div class="container">
+    <h1>🚀 SurakshaAI</h1>
+    <h3>Login</h3>
+
+    <div class="form">
+        <input type="text" id="name" placeholder="Enter Username">
+        <input type="password" id="password" placeholder="Enter Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <p>New user? <a href="index.html">Register here</a></p>
+    <h3 id="status"></h3>
+</div>
+
+<script>
+async function login() {
+    const name = document.getElementById("name").value;
+    const password = document.getElementById("password").value;
+
+    const response = await fetch("http://127.0.0.1:5000/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name, password })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+        document.getElementById("status").innerText = data.error;
+    } else {
+        localStorage.setItem("user_id", data.user_id);
+        window.location.href = "dashboard.html";
+    }
+}
+</script>
+
+</body>
+</html>
